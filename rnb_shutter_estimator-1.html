@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RNB Shutter Estimator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a18; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    .app { max-width: 420px; margin: 0 auto; padding: 24px 20px 48px; min-height: 100vh; }
+    .header { margin-bottom: 32px; }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 4px; color: #c8a96e; margin-bottom: 4px; }
+    .title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 2px; color: #f0ebe0; line-height: 1; }
+    .subtitle { font-size: 13px; color: #6b6b5e; margin-top: 6px; letter-spacing: 0.5px; }
+    .card { background: #242420; border: 1px solid #333330; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .card-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 3px; color: #c8a96e; margin-bottom: 16px; }
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 11px; letter-spacing: 2px; color: #6b6b5e; text-transform: uppercase; }
+    .input-group input { background: #1a1a18; border: 1px solid #444440; border-radius: 8px; padding: 12px 14px; font-size: 22px; font-family: 'Bebas Neue', sans-serif; color: #f0ebe0; letter-spacing: 1px; width: 100%; outline: none; transition: border-color 0.2s; -moz-appearance: textfield; }
+    .input-group input::-webkit-outer-spin-button, .input-group input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .input-group input:focus { border-color: #c8a96e; }
+    .seg-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .seg-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .seg-btn { background: #1a1a18; border: 1px solid #444440; border-radius: 8px; padding: 12px 8px; color: #6b6b5e; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .seg-btn.active { background: #c8a96e; border-color: #c8a96e; color: #1a1a18; font-weight: 600; }
+    .pairs-row { display: flex; align-items: center; gap: 12px; }
+    .pairs-btn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid #444440; background: #1a1a18; color: #f0ebe0; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: 'Bebas Neue', sans-serif; }
+    .pairs-btn:hover { border-color: #c8a96e; color: #c8a96e; }
+    .pairs-value { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: #f0ebe0; min-width: 40px; text-align: center; }
+    .pairs-label { font-size: 11px; letter-spacing: 2px; color: #6b6b5e; text-transform: uppercase; }
+    .result-card { background: #c8a96e; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .result-label { font-size: 11px; letter-spacing: 3px; color: #8a6e3a; text-transform: uppercase; margin-bottom: 4px; }
+    .result-price { font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: #1a1a18; letter-spacing: 1px; line-height: 1; }
+    .result-sub { font-size: 13px; color: #8a6e3a; margin-top: 4px; }
+    .breakdown { background: #242420; border: 1px solid #333330; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+    .breakdown-title { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 3px; color: #c8a96e; margin-bottom: 14px; }
+    .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2e2e2a; }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-key { font-size: 12px; letter-spacing: 1px; color: #6b6b5e; text-transform: uppercase; }
+    .breakdown-val { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: #f0ebe0; letter-spacing: 1px; }
+    .size-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; }
+    .size-standard { background: #2a3a2a; color: #6ab06a; border: 1px solid #3a5a3a; }
+    .size-oversized { background: #3a2a1a; color: #c8a96e; border: 1px solid #5a3a1a; }
+    .empty-state { text-align: center; padding: 32px 0; color: #444440; font-size: 13px; letter-spacing: 1px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo">RNB PROPERTIES</div>
+      <div class="title">SHUTTER ESTIMATOR</div>
+      <div class="subtitle">Board & Batten · Faux Shutter</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Customer Type</div>
+      <div class="seg-grid-3">
+        <button class="seg-btn active" onclick="setTier('wholesale', this)">Wholesale</button>
+        <button class="seg-btn" onclick="setTier('jobber', this)">Jobber</button>
+        <button class="seg-btn" onclick="setTier('retail', this)">Retail</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Shutter Style</div>
+      <div class="seg-grid-2">
+        <button class="seg-btn active" onclick="setStyle('board_batten', this)">Board & Batten</button>
+        <button class="seg-btn" onclick="setStyle('faux_shutter', this)">Faux Shutter</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Dimensions (inches)</div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Width</label>
+          <input type="number" id="width" placeholder="14" oninput="calculate()">
+        </div>
+        <div class="input-group">
+          <label>Height</label>
+          <input type="number" id="height" placeholder="60" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Number of Pairs</div>
+      <div class="pairs-row">
+        <button class="pairs-btn" onclick="changePairs(-1)">−</button>
+        <div class="pairs-value" id="pairs-display">1</div>
+        <button class="pairs-btn" onclick="changePairs(1)">+</button>
+        <div class="pairs-label">pairs</div>
+      </div>
+    </div>
+
+    <div id="empty-state" class="empty-state">Enter dimensions to calculate price</div>
+
+    <div id="results" class="hidden">
+      <div id="size-badge" class="size-badge size-standard">✓ Standard — Under 60.5"</div>
+
+      <div class="result-card">
+        <div class="result-label">Total Price</div>
+        <div class="result-price" id="total-price">$0.00</div>
+        <div class="result-sub" id="result-sub">1 pair · $0.00 per pair</div>
+      </div>
+
+      <div class="breakdown">
+        <div class="breakdown-title">Breakdown</div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Size</div>
+          <div class="breakdown-val" id="bd-size">—</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Square Inches</div>
+          <div class="breakdown-val" id="bd-sqin">—</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Rate</div>
+          <div class="breakdown-val" id="bd-rate">—</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Per Pair</div>
+          <div class="breakdown-val" id="bd-perpair">—</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Pairs</div>
+          <div class="breakdown-val" id="bd-pairs">—</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Sheets Needed</div>
+          <div class="breakdown-val" id="bd-sheets">—</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-key">Total</div>
+          <div class="breakdown-val" id="bd-total">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const RATES = {
+      board_batten: {
+        wholesale: { standard: 0.1085, oversized: 0.1190 },
+        jobber:    { standard: 0.1270, oversized: 0.1394 },
+        retail:    { standard: 0.1455, oversized: 0.1596 },
+      },
+      faux_shutter: {
+        wholesale: { standard: 0.43, oversized: 0.45 },
+        jobber:    { standard: 0.52, oversized: 0.54 },
+        retail:    { standard: 0.60, oversized: 0.62 },
+      },
+    };
+
+    const HEIGHT_BREAK = 60.5;
+    let currentTier = 'wholesale';
+    let currentStyle = 'board_batten';
+    let pairs = 1;
+
+    function setTier(tier, btn) {
+      currentTier = tier;
+      btn.closest('.seg-grid-3').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculate();
+    }
+
+    function setStyle(style, btn) {
+      currentStyle = style;
+      btn.closest('.seg-grid-2').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculate();
+    }
+
+    function changePairs(delta) {
+      pairs = Math.max(1, pairs + delta);
+      document.getElementById('pairs-display').textContent = pairs;
+      calculate();
+    }
+
+    function fmt(n) {
+      return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calcSheets(style, oversized, pairs) {
+      // Board & Batten: 1 piece per shutter
+      // Under 60.5": 6 pieces per sheet = 3 pairs per sheet
+      // Over 60.5": 3 pieces per sheet = 1.5 pairs per sheet
+      // Faux Shutter: 2 pieces per shutter
+      // Under 60.5": 6 pieces per sheet = 1.5 pairs per sheet
+      // Over 60.5": 3 pieces per sheet = 0.75 pairs per sheet
+      if (style === 'board_batten') {
+        if (!oversized) return Math.ceil(pairs / 3);
+        else return Math.ceil(pairs / 1.5);
+      } else {
+        if (!oversized) return Math.ceil(pairs / 1.5);
+        else return Math.ceil(pairs / 0.75);
+      }
+    }
+
+    function calculate() {
+      const w = parseFloat(document.getElementById('width').value);
+      const h = parseFloat(document.getElementById('height').value);
+
+      if (!w || !h || w <= 0 || h <= 0) {
+        document.getElementById('empty-state').classList.remove('hidden');
+        document.getElementById('results').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('results').classList.remove('hidden');
+
+      const oversized = h > HEIGHT_BREAK;
+      const rate = oversized ? RATES[currentStyle][currentTier].oversized : RATES[currentStyle][currentTier].standard;
+      const sqIn = w * h;
+      const pricePerPair = sqIn * rate;
+      const totalPrice = pricePerPair * pairs;
+      const sheets = calcSheets(currentStyle, oversized, pairs);
+
+      const badge = document.getElementById('size-badge');
+      if (oversized) {
+        badge.className = 'size-badge size-oversized';
+        badge.textContent = '⚠ Oversized — Over 60.5"';
+      } else {
+        badge.className = 'size-badge size-standard';
+        badge.textContent = '✓ Standard — Under 60.5"';
+      }
+
+      document.getElementById('total-price').textContent = fmt(totalPrice);
+      document.getElementById('result-sub').textContent = pairs + ' pair' + (pairs > 1 ? 's' : '') + ' · ' + fmt(pricePerPair) + ' per pair';
+      document.getElementById('bd-size').textContent = w + '" × ' + h + '"';
+      document.getElementById('bd-sqin').textContent = sqIn.toLocaleString();
+      document.getElementById('bd-rate').textContent = '$' + rate + '/sq in';
+      document.getElementById('bd-perpair').textContent = fmt(pricePerPair);
+      document.getElementById('bd-pairs').textContent = pairs;
+      document.getElementById('bd-sheets').textContent = sheets + ' sheet' + (sheets !== 1 ? 's' : '');
+      document.getElementById('bd-total').textContent = fmt(totalPrice);
+    }
+  </script>
+</body>
+</html>
