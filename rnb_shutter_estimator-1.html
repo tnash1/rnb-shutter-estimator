@@ -45,7 +45,97 @@
     .size-oversized { background: #3a2a1a; color: #c8a96e; border: 1px solid #5a3a1a; }
     .empty-state { text-align: center; padding: 32px 0; color: #444440; font-size: 13px; letter-spacing: 1px; }
     .hidden { display: none; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #242420;
+      border: 1px solid #444440;
+      border-radius: 12px;
+      padding: 28px 24px;
+      width: 90%;
+      max-width: 380px;
+    }
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 2px;
+      color: #f0ebe0;
+      margin-bottom: 20px;
+    }
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .modal-field label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #6b6b5e;
+      text-transform: uppercase;
+    }
+    .modal-field input {
+      background: #1a1a18;
+      border: 1px solid #444440;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 16px;
+      font-family: 'DM Sans', sans-serif;
+      color: #f0ebe0;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .modal-field input:focus { border-color: #c8a96e; }
+    .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    .btn-send {
+      background: #c8a96e;
+      border: none;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: #1a1a18;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      background: #1a1a18;
+      border: 1px solid #444440;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: #6b6b5e;
+      cursor: pointer;
+    }
+    .send-estimate-btn {
+      width: 100%;
+      background: #c8a96e;
+      border: none;
+      border-radius: 12px;
+      padding: 18px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 3px;
+      color: #1a1a18;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: opacity 0.2s;
+    }
+    .send-estimate-btn:hover { opacity: 0.9; }
+
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
   <div class="app">
@@ -138,6 +228,11 @@
           <div class="breakdown-val" id="bd-total">—</div>
         </div>
       </div>
+
+    <div id="send-btn-container" class="hidden">
+      <button class="send-estimate-btn" onclick="openModal()">SEND ESTIMATE</button>
+    </div>
+
     </div>
   </div>
 
@@ -207,11 +302,13 @@
       if (!w || !h || w <= 0 || h <= 0) {
         document.getElementById('empty-state').classList.remove('hidden');
         document.getElementById('results').classList.add('hidden');
+        document.getElementById('send-btn-container').classList.add('hidden');
         return;
       }
 
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('results').classList.remove('hidden');
+      document.getElementById('send-btn-container').classList.remove('hidden');
 
       const oversized = h > HEIGHT_BREAK;
       const rate = oversized ? RATES[currentStyle][currentTier].oversized : RATES[currentStyle][currentTier].standard;
@@ -239,6 +336,91 @@
       document.getElementById('bd-sheets').textContent = sheets + ' sheet' + (sheets !== 1 ? 's' : '');
       document.getElementById('bd-total').textContent = fmt(totalPrice);
     }
+  </script>
+
+  <!-- Send Estimate Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-title">Send Estimate</div>
+      <div class="modal-field">
+        <label>Customer Name</label>
+        <input type="text" id="customer-name" placeholder="John Smith">
+      </div>
+      <div class="modal-field">
+        <label>Company</label>
+        <input type="text" id="company-name" placeholder="ABC Construction">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-send" onclick="sendEstimate()">Send</button>
+      </div>
+
+    <div id="send-btn-container" class="hidden">
+      <button class="send-estimate-btn" onclick="openModal()">SEND ESTIMATE</button>
+    </div>
+
+    </div>
+  </div>
+
+  <script>
+
+    function openModal() {
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      document.getElementById('customer-name').value = '';
+      document.getElementById('company-name').value = '';
+    }
+
+    // Initialize EmailJS
+    emailjs.init('FX3puFuMYM2r5AxST');
+
+    function sendEstimate() {
+      const customer = document.getElementById('customer-name').value.trim();
+      const company = document.getElementById('company-name').value.trim();
+      if (!customer) { alert('Please enter a customer name'); return; }
+
+      const w = parseFloat(document.getElementById('width').value);
+      const h = parseFloat(document.getElementById('height').value);
+      const oversized = h > HEIGHT_BREAK;
+      const rate = oversized ? RATES[currentStyle][currentTier].oversized : RATES[currentStyle][currentTier].standard;
+      const sqIn = w * h;
+      const pricePerPair = sqIn * rate;
+      const totalPrice = pricePerPair * pairs;
+      const sheets = calcSheets(currentStyle, oversized, pairs);
+      const styleName = currentStyle === 'board_batten' ? 'Board & Batten' : 'Faux Shutter';
+      const tierName = currentTier.charAt(0).toUpperCase() + currentTier.slice(1);
+
+      const sendBtn = document.querySelector('.btn-send');
+      sendBtn.textContent = 'Sending...';
+      sendBtn.disabled = true;
+
+      emailjs.send('service_nojyg0r', 'template_4hizwwi', {
+        customer_name: customer,
+        company_name: company || 'N/A',
+        style: styleName,
+        width: w,
+        height: h,
+        tier: tierName,
+        pairs: pairs,
+        sheets: sheets + ' sheet' + (sheets !== 1 ? 's' : ''),
+        per_pair: '$' + pricePerPair.toFixed(2),
+        total: '$' + totalPrice.toFixed(2)
+      }).then(function() {
+        alert('Estimate sent successfully!');
+        closeModal();
+        sendBtn.textContent = 'Send';
+        sendBtn.disabled = false;
+      }, function(error) {
+        alert('Failed to send estimate. Please try again.');
+        console.error('EmailJS error:', error);
+        sendBtn.textContent = 'Send';
+        sendBtn.disabled = false;
+      });
+    }
+
   </script>
 </body>
 </html>
