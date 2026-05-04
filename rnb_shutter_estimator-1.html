@@ -350,6 +350,10 @@
         <label>Company</label>
         <input type="text" id="company-name" placeholder="ABC Construction">
       </div>
+      <div class="modal-field">
+        <label>Work Order # (if existing)</label>
+        <input type="text" id="work-order" placeholder="Optional">
+      </div>
       <div class="modal-buttons">
         <button class="btn-cancel" onclick="closeModal()">Cancel</button>
         <button class="btn-send" onclick="sendEstimate()">Send</button>
@@ -372,6 +376,7 @@
       document.getElementById('modal').classList.remove('active');
       document.getElementById('customer-name').value = '';
       document.getElementById('company-name').value = '';
+      document.getElementById('work-order').value = '';
     }
 
     // Initialize EmailJS
@@ -400,6 +405,7 @@
       emailjs.send('service_nojyg0r', 'template_4hizwwi', {
         customer_name: customer,
         company_name: company || 'N/A',
+        work_order: document.getElementById('work-order').value.trim() || 'New Work Order',
         style: styleName,
         width: w,
         height: h,
